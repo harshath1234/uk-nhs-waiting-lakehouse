@@ -1,0 +1,20 @@
+{
+  "name": "ds_adls_binary",
+  "properties": {
+    "description": "A file in the landing container. Folder and file name come from the manifest.",
+    "linkedServiceName": { "referenceName": "ls_adls", "type": "LinkedServiceReference" },
+    "parameters": {
+      "folderPath": { "type": "string" },
+      "fileName": { "type": "string" }
+    },
+    "type": "Binary",
+    "typeProperties": {
+      "location": {
+        "type": "AzureBlobFSLocation",
+        "fileSystem": "landing",
+        "folderPath": { "value": "@dataset().folderPath", "type": "Expression" },
+        "fileName": { "value": "@dataset().fileName", "type": "Expression" }
+      }
+    }
+  }
+}

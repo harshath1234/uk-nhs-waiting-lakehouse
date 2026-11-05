@@ -1,0 +1,15 @@
+{
+  "name": "ds_manifest_json",
+  "properties": {
+    "description": "config/manifest.json written by nhs_ingest.discover: one entry per file to land.",
+    "linkedServiceName": { "referenceName": "ls_adls", "type": "LinkedServiceReference" },
+    "type": "Json",
+    "typeProperties": {
+      "location": {
+        "type": "AzureBlobFSLocation",
+        "fileSystem": "config",
+        "fileName": "manifest.json"
+      }
+    }
+  }
+}

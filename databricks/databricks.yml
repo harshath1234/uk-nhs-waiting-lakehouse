@@ -1,0 +1,43 @@
+# Databricks Asset Bundle: deploy with `databricks bundle deploy -t dev`, run with
+# `databricks bundle run nhs_medallion -t dev`. Gold + Parquet export tasks are added in milestone 3.
+bundle:
+  name: nhs-waiting-lakehouse
+
+variables:
+  catalog:
+    default: nhs
+  landing:
+    default: /Volumes/nhs/raw/landing
+  staging:
+    default: /Volumes/nhs/raw/staging
+
+resources:
+  jobs:
+    nhs_medallion:
+      name: nhs-medallion-${bundle.target}
+      max_concurrent_runs: 1
+      tasks:
+        - task_key: bronze
+          notebook_task:
+            notebook_path: ./notebooks/01_bronze.py
+            base_parameters:
+              catalog: ${var.catalog}
+              landing: ${var.landing}
+              staging: ${var.staging}
+        - task_key: silver
+          depends_on:
+            - task_key: bronze
+          notebook_task:
+            notebook_path: ./notebooks/02_silver.py
+            base_parameters:
+              catalog: ${var.catalog}
+      # Monthly, the day after the ADF landing trigger (ADF runs on the 15th).
+      schedule:
+        quartz_cron_expression: "0 0 7 16 * ?"
+        timezone_id: Europe/London
+        pause_status: PAUSED   # unpause once the first manual run is green
+
+targets:
+  dev:
+    mode: development
+    default: true

@@ -1,0 +1,22 @@
+{
+  "name": "ds_http_binary",
+  "properties": {
+    "description": "Any public file, copied byte-for-byte.",
+    "linkedServiceName": {
+      "referenceName": "ls_http_public",
+      "type": "LinkedServiceReference",
+      "parameters": { "baseUrl": { "value": "@dataset().baseUrl", "type": "Expression" } }
+    },
+    "parameters": {
+      "baseUrl": { "type": "string" },
+      "relativeUrl": { "type": "string" }
+    },
+    "type": "Binary",
+    "typeProperties": {
+      "location": {
+        "type": "HttpServerLocation",
+        "relativeUrl": { "value": "@dataset().relativeUrl", "type": "Expression" }
+      }
+    }
+  }
+}

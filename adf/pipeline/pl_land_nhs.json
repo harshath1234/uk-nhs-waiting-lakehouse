@@ -1,0 +1,97 @@
+{
+  "name": "pl_land_nhs",
+  "properties": {
+    "description": "Land every manifest entry into ADLS landing/ byte-for-byte. Files already landed are skipped, so re-runs are safe and revised publications land in their own published=YYYY-MM folder.",
+    "activities": [
+      {
+        "name": "ReadManifest",
+        "type": "Lookup",
+        "policy": { "timeout": "0.00:10:00", "retry": 2, "retryIntervalInSeconds": 30 },
+        "typeProperties": {
+          "source": {
+            "type": "JsonSource",
+            "storeSettings": { "type": "AzureBlobFSReadSettings", "recursive": false }
+          },
+          "dataset": { "referenceName": "ds_manifest_json", "type": "DatasetReference" },
+          "firstRowOnly": false
+        }
+      },
+      {
+        "name": "LandEachFile",
+        "type": "ForEach",
+        "dependsOn": [ { "activity": "ReadManifest", "dependencyConditions": [ "Succeeded" ] } ],
+        "typeProperties": {
+          "items": { "value": "@activity('ReadManifest').output.value", "type": "Expression" },
+          "isSequential": false,
+          "batchCount": 4,
+          "activities": [
+            {
+              "name": "CheckLanded",
+              "type": "GetMetadata",
+              "policy": { "timeout": "0.00:05:00", "retry": 1, "retryIntervalInSeconds": 30 },
+              "typeProperties": {
+                "dataset": {
+                  "referenceName": "ds_adls_binary",
+                  "type": "DatasetReference",
+                  "parameters": {
+                    "folderPath": { "value": "@replace(item().sink_path, concat('/', item().file_name), '')", "type": "Expression" },
+                    "fileName": { "value": "@item().file_name", "type": "Expression" }
+                  }
+                },
+                "fieldList": [ "exists" ]
+              }
+            },
+            {
+              "name": "OnlyIfNotLanded",
+              "type": "IfCondition",
+              "dependsOn": [ { "activity": "CheckLanded", "dependencyConditions": [ "Succeeded" ] } ],
+              "typeProperties": {
+                "expression": { "value": "@not(activity('CheckLanded').output.exists)", "type": "Expression" },
+                "ifTrueActivities": [
+                  {
+                    "name": "CopyHttpToLanding",
+                    "type": "Copy",
+                    "policy": { "timeout": "0.00:30:00", "retry": 3, "retryIntervalInSeconds": 60 },
+                    "typeProperties": {
+                      "source": {
+                        "type": "BinarySource",
+                        "storeSettings": { "type": "HttpReadSettings", "requestMethod": "GET" },
+                        "formatSettings": { "type": "BinaryReadSettings" }
+                      },
+                      "sink": {
+                        "type": "BinarySink",
+                        "storeSettings": { "type": "AzureBlobFSWriteSettings" }
+                      },
+                      "enableStaging": false
+                    },
+                    "inputs": [
+                      {
+                        "referenceName": "ds_http_binary",
+                        "type": "DatasetReference",
+                        "parameters": {
+                          "baseUrl": { "value": "@item().base_url", "type": "Expression" },
+                          "relativeUrl": { "value": "@item().relative_url", "type": "Expression" }
+                        }
+                      }
+                    ],
+                    "outputs": [
+                      {
+                        "referenceName": "ds_adls_binary",
+                        "type": "DatasetReference",
+                        "parameters": {
+                          "folderPath": { "value": "@replace(item().sink_path, concat('/', item().file_name), '')", "type": "Expression" },
+                          "fileName": { "value": "@item().file_name", "type": "Expression" }
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      }
+    ],
+    "annotations": [ "nhs-waiting-lakehouse", "milestone-1" ]
+  }
+}

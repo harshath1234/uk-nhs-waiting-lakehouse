@@ -1,0 +1,15 @@
+{
+  "name": "ls_http_public",
+  "properties": {
+    "description": "Anonymous HTTPS to public NHS sites. Base URL is a parameter so one linked service serves england.nhs.uk and the ODS export API.",
+    "type": "HttpServer",
+    "parameters": {
+      "baseUrl": { "type": "String", "defaultValue": "https://www.england.nhs.uk/" }
+    },
+    "typeProperties": {
+      "url": "@{linkedService().baseUrl}",
+      "enableServerCertificateValidation": true,
+      "authenticationType": "Anonymous"
+    }
+  }
+}

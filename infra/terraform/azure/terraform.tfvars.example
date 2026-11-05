@@ -1,0 +1,6 @@
+# Copy to terraform.tfvars (git-ignored) and fill in.
+subscription_id = "00000000-0000-0000-0000-000000000000" # az account show --query id -o tsv
+alert_emails    = ["you@example.com"]
+budget_amount   = 5
+# budget_start_date = "2026-11-01T00:00:00Z"  # first day of the month you deploy
+# trigger_activated = true                     # only after a manual run succeeded
